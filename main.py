@@ -47,6 +47,21 @@ def generar_codigo_barras(numero_pedido):
     ean.save(f"codes_of_bars/{archivo_codigo_barras}")
     return archivo_codigo_barras
 
+def replace_unsupported_characters(text):
+    # Diccionario de reemplazo para caracteres no soportados
+    replacements = {
+        u'\u2013': '-',  # en dash
+        u'\u2014': '--', # em dash
+        u'\u2018': "'",  # left single quotation mark
+        u'\u2019': "'",  # right single quotation mark
+        u'\u201c': '"',  # left double quotation mark
+        u'\u201d': '"',  # right double quotation mark
+        # Agregar más reemplazos si es necesario
+    }
+    for unicode_char, replacement in replacements.items():
+        text = text.replace(unicode_char, replacement)
+    return text
+
 # Función para generar el PDF del pedido
 def generar_pdf(order):
     pdf = FPDF()
@@ -65,7 +80,7 @@ def generar_pdf(order):
     
     # Añadir información de productos del pedido
     for item in order['line_items']:
-        pdf.cell(0, 10, f"Producto: {item['name']} - Cantidad: {item['quantity']} - Precio: {item['price']}", ln=True)
+        pdf.cell(0, 10, f"Producto: {replace_unsupported_characters(item['name'])} - Cantidad: {replace_unsupported_characters(str(item['quantity']))} - Precio: {replace_unsupported_characters(str(item['price']))}", ln=True)
     
     # Guardar PDF
     archivo_pdf = f"orders/pedido_{order['id']}.pdf"
