@@ -3,6 +3,9 @@ from fpdf import FPDF
 import barcode
 from barcode.writer import ImageWriter
 import requests
+import subprocess
+import platform
+
 
 # Inicializa el motor de texto a voz
 engine = pyttsx3.init()
@@ -62,6 +65,23 @@ def replace_unsupported_characters(text):
         text = text.replace(unicode_char, replacement)
     return text
 
+def imprimir_pdf(archivo_pdf):
+    try:
+        # Detectar el sistema operativo
+        sistema = platform.system()
+
+        if sistema == 'Windows':
+            # En Windows, se puede usar el comando 'print' para enviar el archivo a la impresora predeterminada
+            subprocess.run(['print', '/d:"%printer%"', archivo_pdf], shell=True)
+        elif sistema == 'Darwin':
+            # En macOS, se puede usar el comando 'lpr' para enviar el archivo a la impresora predeterminada
+            subprocess.run(['lpr', archivo_pdf])
+        else:
+            # En Linux, se puede usar el comando 'lpr' igualmente para enviar el archivo a la impresora predeterminada
+            subprocess.run(['lpr', archivo_pdf])
+    except Exception as e:
+        print(f"Ocurrió un error al intentar imprimir el PDF: {e}")
+
 # Función para generar el PDF del pedido
 def generar_pdf(order):
     pdf = FPDF()
@@ -71,13 +91,14 @@ def generar_pdf(order):
     # Incluir logo de la empresa
     pdf.image('logo/path_al_logo.png', 10, 8, 33)
     
-    # Generar y añadir el código de barras
-    archivo_codigo_barras = generar_codigo_barras(order['id'])
-    pdf.image(f"codes_of_bars/{archivo_codigo_barras}.png", x=10, y=30, w=50)
-    
     # Añadir información del pedido
     pdf.cell(0, 10, f"Pedido N°: {order['id']}", ln=True)
     
+    # Generar y añadir el código de barras
+    archivo_codigo_barras = generar_codigo_barras(order['id'])
+    pdf.image(f"codes_of_bars/{archivo_codigo_barras}.png", x=10, y=30, w=50)
+    pdf.ln(20) 
+
     # Añadir información de productos del pedido
     for item in order['line_items']:
         pdf.cell(0, 10, f"Producto: {replace_unsupported_characters(item['name'])} - Cantidad: {replace_unsupported_characters(str(item['quantity']))} - Precio: {replace_unsupported_characters(str(item['price']))}", ln=True)
@@ -98,6 +119,7 @@ def main(date_init, date_end):
             engine.say("Tienes un nuevo pedido.")
             engine.runAndWait()
             archivo_pdf = generar_pdf(pedido)
+            imprimir_pdf(archivo_pdf)
             print(f"PDF generado para el pedido: {archivo_pdf}")
             guardar_ultimo_pedido_notificado(pedido_id)
 
