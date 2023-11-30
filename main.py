@@ -9,17 +9,17 @@ engine = pyttsx3.init()
 
 
 # Configura la API de WooCommerce
-def all_orders(date):
+def all_orders(date_init, date_end):
     headers = {
         "Authorization": "Basic Y2tfNjBjYWMzNjg4Njk5YmRiYTczOTU0ZmU1MDhkNjczYzk1YThhZGU3ZTpjc19hMDdiYWMxMTMyNWM3NjljNDQxNmRjYWY4OWIzYWI2YjdmNzEyMGQz"
     }
-    response = requests.request("GET", f"https://titandecko.com.co/wp-json/wc/v3/orders&after={date}T00:00:00", headers=headers)
+    response = requests.request("GET", f"https://titandecko.com.co/wp-json/wc/v3/orders?per_page=100&after={date_init}T00:00:00&before={date_end}T23:59:59&order=asc", headers=headers)
     return response
 
 # Función para obtener pedidos nuevos desde WooCommerce
-def obtener_pedidos_nuevos(date):
+def obtener_pedidos_nuevos(date_init, date_end):
     try:
-        response = all_orders(date).json()
+        response = all_orders(date_init, date_end).json()
         return response
     except Exception as e:
         print(f"Error al obtener los pedidos: {e}")
@@ -73,9 +73,9 @@ def generar_pdf(order):
     return archivo_pdf
 
 # Función principal que ejecuta el script
-def main(date):
+def main(date_init, date_end):
     ultimo_pedido_id = leer_ultimo_pedido_notificado()
-    pedidos = obtener_pedidos_nuevos(date)
+    pedidos = obtener_pedidos_nuevos(date_init, date_end)
     
     for pedido in pedidos:
         pedido_id = pedido['id']
@@ -87,7 +87,7 @@ def main(date):
             guardar_ultimo_pedido_notificado(pedido_id)
 
 if __name__ == "__main__":
-    date = input("Ingresar fecha con el formato 2023-11-29: ")
-
+    date_init = input("Ingresar fecha inicial con el formato 2023-11-29: ")
+    date_end = input("Ingresar fecha final con el formato 2023-11-29: ")
     while True:
-        main(date)
+        main(date_init, date_end)
